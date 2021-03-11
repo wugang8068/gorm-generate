@@ -13,6 +13,7 @@ type fileConfig struct {
 type config struct {
 	fileConfig     `json:"fileConfig"`
 	TableName      string
+	FileName       string
 	DB             string
 	ConfigFilePath string
 	ModelName      string
@@ -33,10 +34,18 @@ func (c config) GetModelName() string {
 	if len(mn) == 0 {
 		mn = c.GetTableName()
 	}
+	mns := strings.SplitAfter(mn, ".")
+	if len(mns) >= 2 {
+		mn = mns[1]
+	}
 	if len(mn) == 1 {
 		return strings.ToUpper(mn)
 	}
-	return strings.ToUpper(string(mn[0])) + mn[1:]
+	mn = strings.ToLower(mn)
+	//下划线转驼峰
+	mn = strings.Replace(mn, "_", " ", -1)
+	mn = strings.Title(mn)
+	return strings.Replace(mn, " ", "", -1)
 }
 
 func (c config) GetDNS() string {

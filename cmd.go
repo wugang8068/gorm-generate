@@ -57,7 +57,15 @@ func getTableDescription() error {
 	var result tableDcs
 	con.Raw("DESCRIBE " + tableName).Scan(&result)
 	fmt.Printf("%s\n", result.ToString())
-	return nil
+
+	parse := modelParse{
+		PackageName: "models",
+		FileName:    cf.GetModelName() + ".go",
+		ModelName:   cf.GetModelName(),
+		Fields:      result.parseFields(),
+		TableName:   cf.GetTableName(),
+	}
+	return writeFile(parse)
 }
 
 func readConfigFromFile(cfg *config) error {

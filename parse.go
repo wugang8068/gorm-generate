@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"strings"
 )
 
@@ -12,6 +13,17 @@ type tableDcs []tableDesc
 func (c tableDcs) ToString() string {
 	b, _ := json.MarshalIndent(c, "", "	")
 	return string(b)
+}
+
+func (c tableDcs) parseFields() (fields []parseField) {
+	for _, desc := range c {
+		fields = append(fields, parseField{
+			Attr: desc.fieldAttrName(),
+			Type: desc.fieldType(),
+			Tag:  desc.columnTag(),
+		})
+	}
+	return
 }
 
 type tableDesc struct {
@@ -23,12 +35,22 @@ type tableDesc struct {
 	Extra   string `gorm:"column:Extra"`
 }
 
+func (t tableDesc) fieldAttrName() string {
+	name := strings.Replace(t.Field, "_", " ", -1)
+	name = strings.Title(name)
+	return strings.Replace(name, " ", "", -1)
+}
+
+func (t tableDesc) columnTag() string {
+	return "`gorm:\"column:" + t.Field + "\"`"
+}
+
 func (t tableDesc) defaultValue() string {
 	return t.Default
 }
 
 func (t tableDesc) nullable() bool {
-	return t.Null != "NO"
+	return t.Null == "YES"
 }
 
 func (t tableDesc) isPrimaryKey() bool {
@@ -75,8 +97,15 @@ func writeFile(mp modelParse) error {
 	bf := new(bytes.Buffer)
 	bf.WriteString("package " + mp.PackageName + "\n\n\n")
 	bf.WriteString(fmt.Sprintf("type %s struct { \n", mp.ModelName))
-	//for _, field := range mp.Fields {
-	//
-	//}
-	return nil
+	for _, field := range mp.Fields {
+		bf.WriteString(fmt.Sprintf("	%s %s %s\n", field.Attr, field.Type, field.Tag))
+	}
+	bf.WriteString("}\n\n\n")
+	if len(mp.TableName) > 0 {
+		bf.WriteString(fmt.Sprintf(`func(%s) TableName() string {
+	return "%s"
+}`, mp.ModelName, mp.TableName))
+		bf.WriteString("\n")
+	}
+	return ioutil.WriteFile(mp.FileName, bf.Bytes(), 0755)
 }
