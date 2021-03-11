@@ -56,7 +56,7 @@ func getTableDescription() error {
 	}
 	var result tableDcs
 	con.Raw("DESCRIBE " + tableName).Scan(&result)
-	fmt.Printf("%+v\n", result)
+	fmt.Printf("%s\n", result.ToString())
 	return nil
 }
 
