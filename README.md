@@ -30,7 +30,7 @@ Generate a model with special table and model name and special config file
 ```
 and result
 
-```json
+```go
 package models
 
 type Anchor struct {
