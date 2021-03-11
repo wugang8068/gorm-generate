@@ -28,7 +28,7 @@ Generate a model with special table and model name and special config file
 ```json
      ./generate -name PopularAnchor -t mplive.t_popular_anchor -c .yml 
 ```
-and result
+and result in popularanchor.go
 
 ```go
 package models

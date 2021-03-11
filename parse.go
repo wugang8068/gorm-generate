@@ -111,8 +111,9 @@ func writeFile(mp modelParse) error {
 	}
 	if len(mp.Directory) > 0 {
 		createDirectoryIfNotExist(mp.Directory)
+		return ioutil.WriteFile(mp.Directory +  "/" + mp.FileName, bf.Bytes(), 0755)
 	}
-	return ioutil.WriteFile(mp.Directory +  "/" + mp.FileName, bf.Bytes(), 0755)
+	return ioutil.WriteFile(mp.FileName, bf.Bytes(), 0755)
 }
 
 func createDirectoryIfNotExist(path string) {
