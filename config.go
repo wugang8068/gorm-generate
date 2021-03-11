@@ -29,6 +29,27 @@ func (c config) GetTableName() string {
 	return c.TableName
 }
 
+func (c config) GetDirectory() string {
+	return c.Directory
+}
+
+func (c config) GetFileName() string {
+	mn := c.ModelName
+	if len(mn) == 0 {
+		mn = c.GetTableName()
+	}
+	mns := strings.SplitAfter(mn, ".")
+	if len(mns) >= 2 {
+		mn = mns[1]
+	}
+	if len(mn) == 1 {
+		return strings.ToLower(mn) + ".go"
+	}
+	//下划线转驼峰
+	mn = strings.ToLower(mn)
+	return mn + ".go"
+}
+
 func (c config) GetModelName() string {
 	mn := c.ModelName
 	if len(mn) == 0 {
@@ -41,7 +62,6 @@ func (c config) GetModelName() string {
 	if len(mn) == 1 {
 		return strings.ToUpper(mn)
 	}
-	mn = strings.ToLower(mn)
 	//下划线转驼峰
 	mn = strings.Replace(mn, "_", " ", -1)
 	mn = strings.Title(mn)

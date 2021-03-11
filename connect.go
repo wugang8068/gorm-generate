@@ -13,7 +13,7 @@ func connect(dns string) (*gorm.DB, error) {
 	if err != nil {
 		return nil, errors.New("db connection error:" + err.Error())
 	}
-	connection.LogMode(true)
+	//connection.LogMode(true)
 	connection.DB().SetConnMaxLifetime(time.Duration(300) * time.Second)
 	connection.DB().SetMaxOpenConns(200)
 	connection.DB().SetMaxIdleConns(50)

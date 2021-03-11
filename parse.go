@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -91,6 +92,7 @@ type modelParse struct {
 	ModelName   string
 	Fields      []parseField
 	TableName   string
+	Directory   string
 }
 
 func writeFile(mp modelParse) error {
@@ -107,5 +109,15 @@ func writeFile(mp modelParse) error {
 }`, mp.ModelName, mp.TableName))
 		bf.WriteString("\n")
 	}
-	return ioutil.WriteFile(mp.FileName, bf.Bytes(), 0755)
+	if len(mp.Directory) > 0 {
+		createDirectoryIfNotExist(mp.Directory)
+	}
+	return ioutil.WriteFile(mp.Directory +  "/" + mp.FileName, bf.Bytes(), 0755)
+}
+
+func createDirectoryIfNotExist(path string) {
+	_, err := os.Stat(path)
+	if err != nil || os.IsNotExist(err) {
+		_ = os.Mkdir(path, 0755)
+	}
 }

@@ -56,11 +56,10 @@ func getTableDescription() error {
 	}
 	var result tableDcs
 	con.Raw("DESCRIBE " + tableName).Scan(&result)
-	fmt.Printf("%s\n", result.ToString())
-
 	parse := modelParse{
 		PackageName: "models",
-		FileName:    cf.GetModelName() + ".go",
+		Directory:   cf.GetDirectory(),
+		FileName:    cf.GetFileName(),
 		ModelName:   cf.GetModelName(),
 		Fields:      result.parseFields(),
 		TableName:   cf.GetTableName(),
