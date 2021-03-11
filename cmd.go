@@ -4,12 +4,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/jinzhu/gorm"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 )
 
 var cf config
+var con *gorm.DB
 
 func init() {
 	flag.StringVar(&cf.Directory, "d", "", "Generated directory")
@@ -30,7 +32,32 @@ func main() {
 		fmt.Println(e.Error())
 		return
 	}
-	fmt.Printf("\n%+v\n", cf)
+	c, e := connect(cf.GetDNS())
+	if e != nil {
+		fmt.Println(e.Error())
+		return
+	}
+	con = c
+	if e = getTableDescription(); e != nil {
+		fmt.Println(e.Error())
+		return
+	}
+}
+
+func getTableDescription() error {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Printf("%+v\n", err)
+		}
+	}()
+	tableName := cf.GetTableName()
+	if con.HasTable(tableName) == false {
+		return errors.New("table \"" + tableName + "\" not exist")
+	}
+	var result tableDcs
+	con.Raw("DESCRIBE " + tableName).Scan(&result)
+	fmt.Printf("%+v\n", result)
+	return nil
 }
 
 func readConfigFromFile(cfg *config) error {

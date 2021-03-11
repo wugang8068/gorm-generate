@@ -1,13 +1,17 @@
 package main
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+	"strings"
+)
 
 type fileConfig struct {
 	DB string
 }
 
 type config struct {
-	fileConfig
+	fileConfig     `json:"fileConfig"`
 	TableName      string
 	DB             string
 	ConfigFilePath string
@@ -15,8 +19,24 @@ type config struct {
 	Directory      string
 }
 
+func (c config) ToString() string {
+	b, _ := json.MarshalIndent(c, "", "	")
+	return string(b)
+}
+
 func (c config) GetTableName() string {
 	return c.TableName
+}
+
+func (c config) GetModelName() string {
+	mn := c.ModelName
+	if len(mn) == 0 {
+		mn = c.GetTableName()
+	}
+	if len(mn) == 1 {
+		return strings.ToUpper(mn)
+	}
+	return strings.ToUpper(string(mn[0])) + mn[1:]
 }
 
 func (c config) GetDNS() string {
