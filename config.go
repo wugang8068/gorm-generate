@@ -34,6 +34,9 @@ func (c config) GetDirectory() string {
 }
 
 func (c config) GetFileName() string {
+	if len(c.FileName) > 0 {
+		return c.FileName
+	}
 	mn := c.ModelName
 	if len(mn) == 0 {
 		mn = c.GetTableName()

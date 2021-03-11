@@ -43,7 +43,7 @@ func (t tableDesc) fieldAttrName() string {
 }
 
 func (t tableDesc) columnTag() string {
-	return "`gorm:\"column:" + t.Field + "\"`"
+	return "`json:\""+t.Field+"\" gorm:\"column:" + t.Field + "\"`"
 }
 
 func (t tableDesc) defaultValue() string {

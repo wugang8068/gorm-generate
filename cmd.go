@@ -14,6 +14,7 @@ var cf config
 var con *gorm.DB
 
 func init() {
+	flag.StringVar(&cf.FileName, "f", "", "Generate file name")
 	flag.StringVar(&cf.Directory, "d", "", "Generated directory")
 	flag.StringVar(&cf.ModelName, "name", "", "Model name")
 	flag.StringVar(&cf.DB, "db", "", "DB connect dns")
