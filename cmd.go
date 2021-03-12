@@ -70,7 +70,7 @@ func getTableDescription() (*modelParse, error) {
 	con.Raw("DESCRIBE " + tableName).Scan(&result)
 	parse := modelParse{
 		PackageName:         "models",
-		Directory:           cf.GetDirectory(),
+		ModelDirectory:      cf.GetDirectory(),
 		FileName:            cf.GetFileName(),
 		ModelName:           cf.GetModelName(),
 		Fields:              result.parseFields(),

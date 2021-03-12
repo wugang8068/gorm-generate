@@ -2,84 +2,12 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 )
-
-type tableDcs []tableDesc
-
-func (c tableDcs) ToString() string {
-	b, _ := json.MarshalIndent(c, "", "	")
-	return string(b)
-}
-
-func (c tableDcs) parseFields() (fields []parseField) {
-	for _, desc := range c {
-		fields = append(fields, parseField{
-			Attr:      desc.fieldAttrName(),
-			Type:      desc.fieldType(),
-			Tag:       desc.columnTag(),
-			IsPrimary: desc.isPrimaryKey(),
-		})
-	}
-	return
-}
-
-type tableDesc struct {
-	Field   string `gorm:"column:Field"`
-	Type    string `gorm:"column:Type"`
-	Null    string `gorm:"column:Null"`
-	Key     string `gorm:"column:Key"`
-	Default string `gorm:"column:Default"`
-	Extra   string `gorm:"column:Extra"`
-}
-
-func (t tableDesc) fieldAttrName() string {
-	name := strings.Replace(t.Field, "_", " ", -1)
-	name = strings.Title(name)
-	return strings.Replace(name, " ", "", -1)
-}
-
-func (t tableDesc) columnTag() string {
-	return "`json:\"" + t.Field + "\" gorm:\"column:" + t.Field + "\"`"
-}
-
-func (t tableDesc) defaultValue() string {
-	return t.Default
-}
-
-func (t tableDesc) nullable() bool {
-	return t.Null == "YES"
-}
-
-func (t tableDesc) isPrimaryKey() bool {
-	return t.Key == "PRI"
-}
-
-func (t tableDesc) fieldType() fieldType {
-	if strings.HasPrefix(t.Type, "int") || strings.HasPrefix(t.Type, "bigint") {
-		if strings.HasSuffix(t.Type, "unsigned") {
-			return TypeUInt32
-		}
-		return TypeInt32
-	}
-	if strings.HasPrefix(t.Type, "tinyint") || strings.HasPrefix(t.Type, "smallint") || strings.HasPrefix(t.Type, "mediumint") {
-		if strings.HasSuffix(t.Type, "unsigned") {
-			return TypeUInt8
-		}
-		return TypeInt8
-	}
-	if strings.HasPrefix(t.Type, "varchar") || strings.HasPrefix(t.Type, "text") {
-		return TypeString
-	}
-	if strings.HasPrefix(t.Type, "float") || strings.HasPrefix(t.Type, "double") || strings.HasPrefix(t.Type, "decimal") {
-		return TypeFloat
-	}
-	return TypeUnknown
-}
 
 type parseField struct {
 	Attr      string
@@ -94,9 +22,21 @@ type modelParse struct {
 	ModelName           string
 	Fields              []parseField
 	TableName           string
-	Directory           string
+	ModelDirectory      string
 	RepositoryDirectory string
 	DaoDirectory        string
+}
+
+func (m modelParse) modelDirectoryAbsPath() string {
+	dir, e := os.Getwd()
+	var rootDirectory string
+	if e == nil {
+		_, rootDirectory = path.Split(dir)
+	}
+	if len(rootDirectory) > 0 {
+		return rootDirectory + "/" + m.ModelDirectory
+	}
+	return m.ModelDirectory
 }
 
 func (m modelParse) primaryKeyType() fieldType {
@@ -130,9 +70,9 @@ func writeFile(mp *modelParse) error {
 }`, mp.ModelName, mp.TableName))
 		bf.WriteString("\n")
 	}
-	if len(mp.Directory) > 0 {
-		createDirectoryIfNotExist(mp.Directory)
-		return ioutil.WriteFile(mp.Directory+"/"+mp.FileName+".go", bf.Bytes(), 0755)
+	if len(mp.ModelDirectory) > 0 {
+		createDirectoryIfNotExist(mp.ModelDirectory)
+		return ioutil.WriteFile(mp.ModelDirectory+"/"+mp.FileName+".go", bf.Bytes(), 0755)
 	}
 	return ioutil.WriteFile(mp.FileName+".go", bf.Bytes(), 0755)
 }
@@ -143,6 +83,10 @@ func writeDaoFile(mp *modelParse) error {
 		createDirectoryIfNotExist(daoPath)
 		bf := new(bytes.Buffer)
 		bf.WriteString("package dao\n\n")
+		modelAbsPath := mp.modelDirectoryAbsPath()
+		if len(modelAbsPath) > 0 {
+			bf.WriteString(fmt.Sprintf("import models \"%s\"\n\n", modelAbsPath))
+		}
 		bf.WriteString(fmt.Sprintf("type %s struct { }\n\n", mp.DaoStructName()))
 		functions := []string{
 			fmt.Sprintf("func(%s) List() []*models.%s {\n\n}\n\n", mp.DaoStructName(), mp.ModelName),
@@ -164,9 +108,19 @@ func writeRepoFile(mp *modelParse) error {
 	return nil
 }
 
-func createDirectoryIfNotExist(path string) {
-	_, err := os.Stat(path)
+func createDirectoryIfNotExist(p string) {
+	_, err := os.Stat(p)
 	if err != nil || os.IsNotExist(err) {
-		_ = os.Mkdir(path, 0755)
+		ps := strings.Split(p, "/")
+		if len(ps) > 0 {
+			var pt string
+			for _, name := range ps {
+				pt += name
+				_ = os.Mkdir(pt, 0755)
+				pt += "/"
+			}
+		} else {
+			_ = os.Mkdir(p, 0755)
+		}
 	}
 }
