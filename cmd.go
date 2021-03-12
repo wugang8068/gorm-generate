@@ -46,11 +46,15 @@ func main() {
 		fmt.Println(e.Error())
 		return
 	}
-	if e := writeFile(mp); e != nil {
+	if e := writeModelFile(mp); e != nil {
 		fmt.Println(e.Error())
 		return
 	}
 	if e := writeDaoFile(mp); e != nil {
+		fmt.Println(e.Error())
+		return
+	}
+	if e := writeRepoFile(mp); e != nil {
 		fmt.Println(e.Error())
 		return
 	}

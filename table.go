@@ -15,10 +15,11 @@ func (c tableDcs) ToString() string {
 func (c tableDcs) parseFields() (fields []parseField) {
 	for _, desc := range c {
 		fields = append(fields, parseField{
-			Attr:      desc.fieldAttrName(),
-			Type:      desc.fieldType(),
-			Tag:       desc.columnTag(),
-			IsPrimary: desc.isPrimaryKey(),
+			Attr:       desc.fieldAttrName(),
+			Type:       desc.fieldType(),
+			Tag:        desc.columnTag(),
+			ColumnName: desc.Field,
+			IsPrimary:  desc.isPrimaryKey(),
 		})
 	}
 	return
