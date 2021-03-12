@@ -18,6 +18,8 @@ type config struct {
 	ConfigFilePath string
 	ModelName      string
 	Directory      string
+	DaoDirectory   string
+	RepDirectory   string
 }
 
 func (c config) ToString() string {
@@ -46,11 +48,11 @@ func (c config) GetFileName() string {
 		mn = mns[1]
 	}
 	if len(mn) == 1 {
-		return strings.ToLower(mn) + ".go"
+		return strings.ToLower(mn)
 	}
 	//下划线转驼峰
 	mn = strings.ToLower(mn)
-	return mn + ".go"
+	return mn
 }
 
 func (c config) GetModelName() string {

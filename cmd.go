@@ -19,6 +19,8 @@ func init() {
 	flag.StringVar(&cf.ModelName, "name", "", "Model name")
 	flag.StringVar(&cf.DB, "db", "", "DB connect dns")
 	flag.StringVar(&cf.TableName, "t", "", "Table name of generated model")
+	flag.StringVar(&cf.DaoDirectory, "dao", "", "The directory of dao generate.")
+	flag.StringVar(&cf.RepDirectory, "repo", "", "The directory of repository generate.")
 	flag.StringVar(&cf.ConfigFilePath, "c", "", "Special config file, format: .yml")
 }
 
@@ -39,13 +41,22 @@ func main() {
 		return
 	}
 	con = c
-	if e = getTableDescription(); e != nil {
+	mp, e := getTableDescription()
+	if e != nil {
+		fmt.Println(e.Error())
+		return
+	}
+	if e := writeFile(mp); e != nil {
+		fmt.Println(e.Error())
+		return
+	}
+	if e := writeDaoFile(mp); e != nil {
 		fmt.Println(e.Error())
 		return
 	}
 }
 
-func getTableDescription() error {
+func getTableDescription() (*modelParse, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Printf("%+v\n", err)
@@ -53,19 +64,21 @@ func getTableDescription() error {
 	}()
 	tableName := cf.GetTableName()
 	if con.HasTable(tableName) == false {
-		return errors.New("table \"" + tableName + "\" not exist")
+		return nil, errors.New("table \"" + tableName + "\" not exist")
 	}
 	var result tableDcs
 	con.Raw("DESCRIBE " + tableName).Scan(&result)
 	parse := modelParse{
-		PackageName: "models",
-		Directory:   cf.GetDirectory(),
-		FileName:    cf.GetFileName(),
-		ModelName:   cf.GetModelName(),
-		Fields:      result.parseFields(),
-		TableName:   cf.GetTableName(),
+		PackageName:         "models",
+		Directory:           cf.GetDirectory(),
+		FileName:            cf.GetFileName(),
+		ModelName:           cf.GetModelName(),
+		Fields:              result.parseFields(),
+		TableName:           cf.GetTableName(),
+		DaoDirectory:        cf.DaoDirectory,
+		RepositoryDirectory: cf.RepDirectory,
 	}
-	return writeFile(parse)
+	return &parse, nil
 }
 
 func readConfigFromFile(cfg *config) error {

@@ -19,9 +19,10 @@ func (c tableDcs) ToString() string {
 func (c tableDcs) parseFields() (fields []parseField) {
 	for _, desc := range c {
 		fields = append(fields, parseField{
-			Attr: desc.fieldAttrName(),
-			Type: desc.fieldType(),
-			Tag:  desc.columnTag(),
+			Attr:      desc.fieldAttrName(),
+			Type:      desc.fieldType(),
+			Tag:       desc.columnTag(),
+			IsPrimary: desc.isPrimaryKey(),
 		})
 	}
 	return
@@ -43,7 +44,7 @@ func (t tableDesc) fieldAttrName() string {
 }
 
 func (t tableDesc) columnTag() string {
-	return "`json:\""+t.Field+"\" gorm:\"column:" + t.Field + "\"`"
+	return "`json:\"" + t.Field + "\" gorm:\"column:" + t.Field + "\"`"
 }
 
 func (t tableDesc) defaultValue() string {
@@ -81,28 +82,48 @@ func (t tableDesc) fieldType() fieldType {
 }
 
 type parseField struct {
-	Attr string
-	Type fieldType
-	Tag  string
+	Attr      string
+	Type      fieldType
+	Tag       string
+	IsPrimary bool
 }
 
 type modelParse struct {
-	PackageName string
-	FileName    string
-	ModelName   string
-	Fields      []parseField
-	TableName   string
-	Directory   string
+	PackageName         string
+	FileName            string
+	ModelName           string
+	Fields              []parseField
+	TableName           string
+	Directory           string
+	RepositoryDirectory string
+	DaoDirectory        string
 }
 
-func writeFile(mp modelParse) error {
+func (m modelParse) primaryKeyType() fieldType {
+	for _, value := range m.Fields {
+		if value.IsPrimary {
+			return value.Type
+		}
+	}
+	return TypeUnknown
+}
+
+func (m modelParse) RepositoryInterfaceName() string {
+	return m.ModelName + "Repository"
+}
+
+func (m modelParse) DaoStructName() string {
+	return m.ModelName + "Dao"
+}
+
+func writeFile(mp *modelParse) error {
 	bf := new(bytes.Buffer)
-	bf.WriteString("package " + mp.PackageName + "\n\n\n")
+	bf.WriteString("package " + mp.PackageName + "\n\n")
 	bf.WriteString(fmt.Sprintf("type %s struct { \n", mp.ModelName))
 	for _, field := range mp.Fields {
 		bf.WriteString(fmt.Sprintf("	%s %s %s\n", field.Attr, field.Type, field.Tag))
 	}
-	bf.WriteString("}\n\n\n")
+	bf.WriteString("}\n\n")
 	if len(mp.TableName) > 0 {
 		bf.WriteString(fmt.Sprintf(`func(%s) TableName() string {
 	return "%s"
@@ -111,9 +132,36 @@ func writeFile(mp modelParse) error {
 	}
 	if len(mp.Directory) > 0 {
 		createDirectoryIfNotExist(mp.Directory)
-		return ioutil.WriteFile(mp.Directory +  "/" + mp.FileName, bf.Bytes(), 0755)
+		return ioutil.WriteFile(mp.Directory+"/"+mp.FileName+".go", bf.Bytes(), 0755)
 	}
-	return ioutil.WriteFile(mp.FileName, bf.Bytes(), 0755)
+	return ioutil.WriteFile(mp.FileName+".go", bf.Bytes(), 0755)
+}
+
+func writeDaoFile(mp *modelParse) error {
+	if len(mp.DaoDirectory) > 0 {
+		daoPath := strings.TrimRight(mp.DaoDirectory, "/") + "/dao"
+		createDirectoryIfNotExist(daoPath)
+		bf := new(bytes.Buffer)
+		bf.WriteString("package dao\n\n")
+		bf.WriteString(fmt.Sprintf("type %s struct { }\n\n", mp.DaoStructName()))
+		functions := []string{
+			fmt.Sprintf("func(%s) List() []*models.%s {\n\n}\n\n", mp.DaoStructName(), mp.ModelName),
+			fmt.Sprintf("func(%s) GetById(id %s) (*models.%s, error) {\n\n}\n\n", mp.DaoStructName(), mp.primaryKeyType(), mp.ModelName),
+		}
+		for _, fs := range functions {
+			bf.WriteString(fs)
+		}
+		return ioutil.WriteFile(daoPath+"/"+mp.FileName+"_dao.go", bf.Bytes(), 0755)
+	}
+	return nil
+}
+
+func writeRepoFile(mp *modelParse) error {
+	if len(mp.RepositoryDirectory) > 0 {
+		createDirectoryIfNotExist(strings.TrimRight(mp.RepositoryDirectory, "/") + "/repo")
+		//bf := new(bytes.Buffer)
+	}
+	return nil
 }
 
 func createDirectoryIfNotExist(path string) {
