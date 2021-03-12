@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"strings"
+	"unicode"
 )
 
 type fileConfig struct {
@@ -50,9 +52,18 @@ func (c config) GetFileName() string {
 	if len(mn) == 1 {
 		return strings.ToLower(mn)
 	}
-	//下划线转驼峰
-	mn = strings.ToLower(mn)
-	return mn
+	buffer := new(bytes.Buffer)
+	for i, r := range mn {
+		if unicode.IsUpper(r) {
+			if i != 0 {
+				buffer.WriteByte('_')
+			}
+			buffer.WriteRune(unicode.ToLower(r))
+		} else {
+			buffer.WriteRune(r)
+		}
+	}
+	return buffer.String()
 }
 
 func (c config) GetModelName() string {
