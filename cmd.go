@@ -14,14 +14,14 @@ var cf config
 var con *gorm.DB
 
 func init() {
-	flag.StringVar(&cf.FileName, "f", "", "Generate file name")
-	flag.StringVar(&cf.Directory, "d", "", "Generated directory")
-	flag.StringVar(&cf.ModelName, "name", "", "Model name")
-	flag.StringVar(&cf.DB, "db", "", "DB connect dns")
-	flag.StringVar(&cf.TableName, "t", "", "Table name of generated model")
+	flag.StringVar(&cf.FileName, "model-file", "", "Generate model file name")
+	flag.StringVar(&cf.Directory, "model-directory", "", "Generated model directory")
+	flag.StringVar(&cf.ModelName, "model-name", "", "Generate model struct name")
+	flag.StringVar(&cf.DB, "connection", "", "DB connect dns")
+	flag.StringVar(&cf.TableName, "table", "", "Table name of generated model")
 	flag.StringVar(&cf.DaoDirectory, "dao", "", "The directory of dao generate.")
 	flag.StringVar(&cf.RepDirectory, "repo", "", "The directory of repository generate.")
-	flag.StringVar(&cf.ConfigFilePath, "c", "", "Special config file, format: .yml")
+	flag.StringVar(&cf.ConfigFilePath, "config", "", "Special config file, format: .yml")
 }
 
 func main() {
