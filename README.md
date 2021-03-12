@@ -4,16 +4,22 @@ Gorm model auto generate scaffold
 
 Helpers:
 ```json
-  -c string
-        Special config file, format: .yml if empty, the default db connection file is .yml
-  -d string
-        Generated directory
-  -db string
-        DB connect dns
-  -name string
-        Model name
-  -t string
-        Table name of generated model
+    -config string
+          Special config file, format: .yml
+    -connection string
+          DB connect dns
+    -dao string
+          The directory of dao generate.
+    -model-directory string
+          Generated model directory
+    -model-file string
+          Generate model file name
+    -model-name string
+          Generate model struct name
+    -repo string
+          The directory of repository generate.
+    -table string
+          Table name of generated model
 ```
 
 Default config file format:
@@ -26,40 +32,94 @@ db: username:password@tcp(host.mysql.rds.com:3306)/mplive?charset=utf8mb4&collat
 Generate a model with special table and model name and special config file
     
 ```json
-     ./generate -name PopularAnchor -t mplive.t_popular_anchor -c .yml 
+     ./generate -table mplive.t_popular_anchor -model-name PopularAnchor -model-directory models -repo repo -dao dao -model-file popular_anchor -config .yml
 ```
-and result in popularanchor.go
-
+and result is below: 
+popular_anchor.go
 ```go
 package models
 
-type Anchor struct {
-	Id                  uint32 `gorm:"column:id"`
-	UserId              uint32 `gorm:"column:user_id"`
-	State               int8   `gorm:"column:state"`
-	BlockExpiredAt      int32  `gorm:"column:block_expired_at"`
-	Room                string `gorm:"column:room"`
-	Coin                int32  `gorm:"column:coin"`
-	TotalCoin           uint32 `gorm:"column:total_coin"`
-	Level               int32  `gorm:"column:level"`
-	LevelScore          int32  `gorm:"column:level_score"`
-	Certificated        int8   `gorm:"column:certificated"`
-	CertificatedAt      int32  `gorm:"column:certificated_at"`
-	CertificatedDetail  string `gorm:"column:certificated_detail"`
-	SignStatus          uint8  `gorm:"column:sign_status"`
-	SignCompany         string `gorm:"column:sign_company"`
-	SignDetail          string `gorm:"column:sign_detail"`
-	LastWithdrawAccount string `gorm:"column:last_withdraw_account"`
-	TotalWithdrawCoin   uint32 `gorm:"column:total_withdraw_coin"`
-	TotalWithdrawAmount uint32 `gorm:"column:total_withdraw_amount"`
-	SignedAt            uint32 `gorm:"column:signed_at"`
-	UpdatedAt           int32  `gorm:"column:updated_at"`
-	CreatedAt           int32  `gorm:"column:created_at"`
+type PopularAnchor struct { 
+	Id uint32 `json:"id" gorm:"column:id"`
+	UserId int32 `json:"user_id" gorm:"column:user_id"`
+	VisitorCount int32 `json:"visitor_count" gorm:"column:visitor_count"`
+	CreatedAt int32 `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt int32 `json:"updated_at" gorm:"column:updated_at"`
 }
 
-func (Anchor) TableName() string {
-	return "mplive.t_anchor"
+func(PopularAnchor) TableName() string {
+	return "mplive.t_popular_anchor"
 }
-
 ```
-    
+
+popular_anchor_dao.go
+```go
+package dao
+
+import (
+	"github.com/jinzhu/gorm"
+	models "gorm_generate/models"
+	"gorm_generate/mysql"
+)
+
+type PopularAnchorDao struct { }
+
+func(PopularAnchorDao) List() (l []*models.PopularAnchor) {
+	mysql.DefaultConnection().Order("id desc").Find(&l) 
+	return
+}
+
+func(PopularAnchorDao) GetById(id uint32) (*models.PopularAnchor, error) {
+	var m models.PopularAnchor
+	e := mysql.DefaultConnection().Where("id = ?", id).First(&m).Error
+	if e != nil && e != gorm.ErrRecordNotFound {
+		return nil, e 
+	}
+	return &m, nil
+}
+
+func (PopularAnchorDao) Create(m models.PopularAnchor) (*models.PopularAnchor, error)  {
+	e := mysql.DefaultConnection().Create(&m).Error
+	if e != nil {
+		return nil, e
+	}
+	return &m, nil
+}
+
+func (PopularAnchorDao) Update(m models.PopularAnchor, updates map[string]interface{}) (*models.PopularAnchor, error) {
+	if len(updates) == 0 {
+		return &m, nil
+	}
+	e := mysql.DefaultConnection().Model(&m).UpdateColumns(updates).Error
+	if e != nil {
+		return nil, e
+	}
+	return &m, nil
+}
+
+func (PopularAnchorDao) Delete(m models.PopularAnchor) error {
+	return mysql.DefaultConnection().Delete(m).Error
+}
+```
+
+popular_anchor_repo.go
+```go
+package repo
+
+import (
+	models "gorm_generate/models"
+	dao "gorm_generate/dao"
+)
+
+type PopularAnchorRepository interface {
+	List() (l []*models.PopularAnchor)
+	GetById(id uint32) (*models.PopularAnchor, error)
+	Create(m models.PopularAnchor) (*models.PopularAnchor, error)
+	Update(m models.PopularAnchor, updates map[string]interface{}) (*models.PopularAnchor, error)
+	Delete(m models.PopularAnchor) error
+}
+
+func NewPopularAnchorRepository() PopularAnchorRepository {
+	return dao.PopularAnchorDao{}
+}
+```
