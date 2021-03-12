@@ -99,7 +99,10 @@ func writeDaoFile(mp *modelParse) error {
 			fmt.Sprintf("func(%s) GetById(id %s) (*models.%s, error) {\n"+
 				"	var m models.%s\n"+
 				"	e := mysql.DefaultConnection().Where(\"%s = ?\", id).First(&m).Error\n"+
-				"	if e != nil && e != gorm.ErrRecordNotFound {\n"+
+				"	if e != nil {\n"+
+				"		if gorm.IsRecordNotFoundError(e) {\n" +
+				"			return nil, nil\n"+
+				"		}\n"+
 				"		return nil, e \n"+
 				"	}\n"+
 				"	return &m, nil\n"+

@@ -58,6 +58,7 @@ func main() {
 		fmt.Println(e.Error())
 		return
 	}
+	fmt.Println("Generate success!")
 }
 
 func getTableDescription() (*modelParse, error) {
