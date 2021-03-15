@@ -18,3 +18,7 @@ vendor
 .yml
 demo
 dao
+models
+mysql
+repo
+tests

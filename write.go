@@ -100,7 +100,7 @@ func writeDaoFile(mp *modelParse) error {
 				"	var m models.%s\n"+
 				"	e := mysql.DefaultConnection().Where(\"%s = ?\", id).First(&m).Error\n"+
 				"	if e != nil {\n"+
-				"		if gorm.IsRecordNotFoundError(e) {\n" +
+				"		if gorm.IsRecordNotFoundError(e) {\n"+
 				"			return nil, nil\n"+
 				"		}\n"+
 				"		return nil, e \n"+
@@ -149,7 +149,9 @@ func writeRepoFile(mp *modelParse) error {
 		modelAbsPath := mp.modelDirectoryAbsPath()
 		bf.WriteString("import (\n")
 		bf.WriteString(fmt.Sprintf("	models \"%s\"\n", modelAbsPath))
-		bf.WriteString(fmt.Sprintf("	dao \"%s\"\n", daoAbsPath))
+		if len(daoAbsPath) > 0 {
+			bf.WriteString(fmt.Sprintf("	dao \"%s\"\n", daoAbsPath))
+		}
 		bf.WriteString(")\n\n")
 		bf.WriteString(fmt.Sprintf("type %sRepository interface {\n", mp.ModelName))
 		bf.WriteString(fmt.Sprintf("	List() (l []*models.%s)\n", mp.ModelName))
@@ -158,9 +160,11 @@ func writeRepoFile(mp *modelParse) error {
 		bf.WriteString(fmt.Sprintf("	Update(m models.%s, updates map[string]interface{}) (*models.%s, error)\n", mp.ModelName, mp.ModelName))
 		bf.WriteString(fmt.Sprintf("	Delete(m models.%s) error\n", mp.ModelName))
 		bf.WriteString("}\n\n")
-		bf.WriteString(fmt.Sprintf("func New%sRepository() %sRepository {\n"+
-			"	return dao.%s{}\n"+
-			"}\n\n", mp.ModelName, mp.ModelName, mp.DaoStructName()))
+		if len(daoAbsPath) > 0 {
+			bf.WriteString(fmt.Sprintf("func New%sRepository() %sRepository {\n"+
+				"	return dao.%s{}\n"+
+				"}\n\n", mp.ModelName, mp.ModelName, mp.DaoStructName()))
+		}
 		return ioutil.WriteFile(repoPath+"/"+mp.FileName+"_repo.go", bf.Bytes(), 0755)
 	}
 	return nil
