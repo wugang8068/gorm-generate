@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 var cf config
@@ -73,16 +74,35 @@ func getTableDescription() (*modelParse, error) {
 	}
 	var result tableDcs
 	con.Raw("DESCRIBE " + tableName).Scan(&result)
+	modelDirectory := cf.GetDirectory()
+	modelPackageName := "models"
+	if len(modelDirectory) > 0 {
+		sps := strings.Split(modelDirectory, "/")
+		modelPackageName = sps[len(sps)-1]
+	}
+	daoPackageName := "dao"
+	repoPackageName := "repo"
+	if len(cf.DaoDirectory) > 0 {
+		sps := strings.Split(cf.DaoDirectory, "/")
+		daoPackageName = sps[len(sps)-1]
+	}
+	if len(cf.RepDirectory) > 0 {
+		sps := strings.Split(cf.RepDirectory, "/")
+		repoPackageName = sps[len(sps)-1]
+	}
 	parse := modelParse{
-		PackageName:         "models",
-		ModelDirectory:      cf.GetDirectory(),
+		ModelPackageName:    modelPackageName,
+		ModelDirectory:      modelDirectory,
 		FileName:            cf.GetFileName(),
 		ModelName:           cf.GetModelName(),
 		Fields:              result.parseFields(),
 		TableName:           cf.GetTableName(),
 		DaoDirectory:        cf.DaoDirectory,
+		DaoPackageName:      daoPackageName,
+		RepoPackageName:     repoPackageName,
 		RepositoryDirectory: cf.RepDirectory,
 	}
+
 	return &parse, nil
 }
 

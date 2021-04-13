@@ -57,7 +57,7 @@ func writeConnectionUtilTool(mp *modelParse) error {
 
 func writeModelFile(mp *modelParse) error {
 	bf := new(bytes.Buffer)
-	bf.WriteString("package " + mp.PackageName + "\n\n")
+	bf.WriteString("package " + mp.ModelPackageName + "\n\n")
 	bf.WriteString(fmt.Sprintf("type %s struct { \n", mp.ModelName))
 	for _, field := range mp.Fields {
 		bf.WriteString(fmt.Sprintf("	%s %s %s\n", field.Attr, field.Type, field.Tag))
@@ -81,7 +81,7 @@ func writeDaoFile(mp *modelParse) error {
 		daoPath := strings.TrimRight(mp.DaoDirectory, "/")
 		createDirectoryIfNotExist(daoPath)
 		bf := new(bytes.Buffer)
-		bf.WriteString("package dao\n\n")
+		bf.WriteString("package "+ mp.DaoPackageName +"\n\n")
 		modelAbsPath := mp.modelDirectoryAbsPath()
 		if len(modelAbsPath) > 0 || modelAbsPath != mp.daoDirectoryAbsPath() {
 			bf.WriteString("import (\n")
@@ -144,7 +144,7 @@ func writeRepoFile(mp *modelParse) error {
 		repoPath := strings.TrimRight(mp.RepositoryDirectory, "/")
 		createDirectoryIfNotExist(repoPath)
 		bf := new(bytes.Buffer)
-		bf.WriteString("package repo\n\n")
+		bf.WriteString("package "+ mp.RepoPackageName +"\n\n")
 		daoAbsPath := mp.daoDirectoryAbsPath()
 		modelAbsPath := mp.modelDirectoryAbsPath()
 		bf.WriteString("import (\n")

@@ -14,7 +14,9 @@ type parseField struct {
 }
 
 type modelParse struct {
-	PackageName         string
+	ModelPackageName    string
+	DaoPackageName      string
+	RepoPackageName     string
 	FileName            string
 	ModelName           string
 	Fields              []parseField
